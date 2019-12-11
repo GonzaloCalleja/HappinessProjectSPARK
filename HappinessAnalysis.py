@@ -2,10 +2,19 @@ from pyspark import SparkConf, SparkContext
 import re
 
 DATA_POINTS = ["Country", "Region", "Score"]
+YEARS = [2015, 2016, 2017, 2018, 2019]
+FILE_DIRECTORY = "./dataFiles/"
+FILE_EXTENSION = ".csv"
+UNWANTED_PATTERN = r'\".*?\,.*?\"'
 
 
 # method extract country name, region & happiness score
 def parseLine(line, columns):
+
+    if re.search(UNWANTED_PATTERN, line):
+        line = str(re.sub('"', "", line))
+        columns[1] += 1
+
     fields = line.split(',')
     result = []
 
@@ -23,6 +32,8 @@ def parseLine(line, columns):
 
 
 # Since not all files are structured the same way we have to organize them:
+# 2017 -> no Region & countries surrounded by ""
+# 2018 & 2019 -> Country or Region
 def cleanFile(lines):
     header = lines.first().split(',')
     columns = []
@@ -46,21 +57,14 @@ def flipKeyValue(line):
 conf = SparkConf().setMaster("local").setAppName("HappinessProjectSPARK")
 sc = SparkContext(conf=conf)
 
-# 2017 -> no Region
-# 2018 & 2019 -> Country or Region
-
 # LOAD DATA
-data_files = [
-    ("2015", cleanFile(sc.textFile("./dataFiles/2015.csv"))),
-    ("2016", cleanFile(sc.textFile("./dataFiles/2016.csv"))),
-    ("2017", cleanFile(sc.textFile("./dataFiles/2017.csv"))),
-    ("2018", cleanFile(sc.textFile("./dataFiles/2018.csv"))),
-    ("2019", cleanFile(sc.textFile("./dataFiles/2019.csv")))
-]
+happinessRDDs = []
+for year in YEARS:
+    happinessRDDs.append((year, cleanFile(sc.textFile(FILE_DIRECTORY + str(year) + FILE_EXTENSION))))
 
 
 # FIRST ANALYSIS: Happiest country for each year
-for year, rdd in data_files:
+for year, rdd in happinessRDDs:
 
     alphabetically = rdd.sortByKey()
     flipped = rdd.map(flipKeyValue)
