@@ -68,14 +68,9 @@ for year, rdd in happinessRDDs:
 
     alphabetically = rdd.sortByKey()
     flipped = rdd.map(flipKeyValue)
-    sortedRDD = flipped.sortByKey()
+    sortedRDD = flipped.sortByKey().map(flipKeyValue)
     sortedCountries = sortedRDD.collect()
-    print(year)
-    print(sortedCountries[-1])
-
-    #for country in sortedCountries:
-        #print(country)
-
+    print "YEAR:", year, "- Happiest Country:", sortedCountries[-1][0], "Score:", sortedCountries[-1][-1]
 
 
 # # happiest year of a country:
