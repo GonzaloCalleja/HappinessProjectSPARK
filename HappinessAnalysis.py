@@ -3,6 +3,7 @@ import re
 
 DATA_POINTS = ["Country", "Region", "Score"]
 
+
 # method extract country name, region & happiness score
 def parseLine(line, columns):
     fields = line.split(',')
@@ -20,6 +21,7 @@ def parseLine(line, columns):
 
     return result
 
+
 # Since not all files are structured the same way we have to organize them:
 def cleanFile(lines):
     header = lines.first().split(',')
@@ -30,7 +32,7 @@ def cleanFile(lines):
             if dataPoint in columnName:
                 columns.append(index)
 
-    return lines.map(lambda row: parseLine(row, columns)).filter(lambda x: x[0] != DATA_POINTS[0])
+    return lines.map(lambda row: parseLine(row, columns)).filter(lambda x: DATA_POINTS[0] not in x[0])
 
 
 def flipKeyValue(line):
@@ -38,6 +40,7 @@ def flipKeyValue(line):
         return line[2], line[1], line[0]
     elif len(line) == 2:
         return line[1], line[0]
+
 
 # Create Spark context and name the project
 conf = SparkConf().setMaster("local").setAppName("HappinessProjectSPARK")
@@ -47,27 +50,27 @@ sc = SparkContext(conf=conf)
 # 2018 & 2019 -> Country or Region
 
 # LOAD DATA
-data_files = {
-    "2015" : cleanFile(sc.textFile("./dataFiles/2015.csv")),
-    "2016" : cleanFile(sc.textFile("./dataFiles/2016.csv")),
-    "2017" : cleanFile(sc.textFile("./dataFiles/2017.csv")),
-    "2018" : cleanFile(sc.textFile("./dataFiles/2018.csv")),
-    "2019" : cleanFile(sc.textFile("./dataFiles/2019.csv"))
-}
+data_files = [
+    ("2015", cleanFile(sc.textFile("./dataFiles/2015.csv"))),
+    ("2016", cleanFile(sc.textFile("./dataFiles/2016.csv"))),
+    ("2017", cleanFile(sc.textFile("./dataFiles/2017.csv"))),
+    ("2018", cleanFile(sc.textFile("./dataFiles/2018.csv"))),
+    ("2019", cleanFile(sc.textFile("./dataFiles/2019.csv")))
+]
 
 
 # FIRST ANALYSIS: Happiest country for each year
-for year, rdd in data_files.items():
+for year, rdd in data_files:
 
     alphabetically = rdd.sortByKey()
-    # flipped = rdd.map(flipKeyValue)
-    # sortedRDD = flipped.sortByKey().map(flipKeyValue)
-    results = alphabetically.collect()
+    flipped = rdd.map(flipKeyValue)
+    sortedRDD = flipped.sortByKey()
+    sortedCountries = sortedRDD.collect()
     print(year)
-    #print(results[-1])
+    print(sortedCountries[-1])
 
-    for result in results:
-        print(result)
+    #for country in sortedCountries:
+        #print(country)
 
 
 
