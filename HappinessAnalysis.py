@@ -6,27 +6,30 @@ YEARS = [2015, 2016, 2017, 2018, 2019]
 FILE_DIRECTORY = "./dataFiles/"
 FILE_EXTENSION = ".csv"
 UNWANTED_PATTERN = r'\".*?\,.*?\"'
+COUNTRY_NAME_POS = 0
+REGION_NAME_POS = 1
+SCORE_NAME_POS = -1
 
 
 # method extract country name, region & happiness score
 def parseLine(line, columns):
-
+    indexes = list(columns)
     if re.search(UNWANTED_PATTERN, line):
-        line = str(re.sub('"', "", line))
-        columns[1] += 1
+        indexes[1] = indexes[1] + 1
 
+    line = str(re.sub('"', "", line))
     fields = line.split(',')
     result = []
 
     for index, field in enumerate(fields):
-        if index in columns:
+        if index in indexes:
             result.append(field)
 
     for index, element in enumerate(result):
         if re.search("/d", element):
             result[index] = float(element)
         else:
-            result[index] = str(re.sub('"', "", element))
+            result[index] = element
 
     return result
 
@@ -45,7 +48,7 @@ def cleanFile(lines):
 
     return lines.map(lambda row: parseLine(row, columns)).filter(lambda x: DATA_POINTS[0] not in x[0])
 
-
+# Method to flip without mattering whether it has a "Region" value or not
 def flipKeyValue(line):
     if len(line) == 3:
         return line[2], line[1], line[0]
@@ -70,8 +73,10 @@ for year, rdd in happinessRDDs:
     flipped = rdd.map(flipKeyValue)
     sortedRDD = flipped.sortByKey().map(flipKeyValue)
     sortedCountries = sortedRDD.collect()
-    print "YEAR:", year, "- Happiest Country:", sortedCountries[-1][0], "Score:", sortedCountries[-1][-1]
+    print "YEAR", year, "- Happiest Country:", sortedCountries[-1][COUNTRY_NAME_POS], "Score:", sortedCountries[-1][SCORE_NAME_POS]
 
+
+#
 
 # # happiest year of a country:
 # happiest = flipped.reduceByKey(lambda x, y: max(x,y))
