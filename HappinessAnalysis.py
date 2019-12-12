@@ -197,8 +197,8 @@ for year, rdd in happinessRDDs:
 print("SECOND ANALYSIS: Happiest Regions per Year")
 for year in YEARS:
     result = regionsByHappinessInYear(year, combinedRDD)
-    print('YEAR %d | Happiest Region: %-18s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
-    print('YEAR %d | Saddest Region: %-20s | Average Score:%.3f' % (year, result[0][0], result[0][1]))
+    print('YEAR %d | Happiest Region: %-28s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
+    print('YEAR %d | Saddest Region: %-30s | Average Score:%.3f' % (year, result[0][0], result[0][1]))
     print
 
 # PRINT THIRD ANALYSIS
