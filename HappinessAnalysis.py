@@ -72,12 +72,11 @@ for year in YEARS:
 
 # FIRST ANALYSIS: Happiest country for each year
 for year, rdd in happinessRDDs:
-    print(year)
     flipped = rdd.map(flipKeyValue)
     sortedRDD = flipped.sortByKey().map(flipKeyValue)
-    print(sortedRDD.collect())
     sortedCountries = sortedRDD.collect()
     print "YEAR", year, "| Happiest Country:", sortedCountries[-1][COUNTRY_NAME_POS], "| Score:", sortedCountries[-1][SCORE_NAME_POS][-1]
+
 # SECOND ANALYSIS: Happiest region for each year
 
 a = happinessRDDs[0][1].union(happinessRDDs[1][1])
