@@ -124,8 +124,8 @@ def countriesByHappinessInYear(rdd):
 
 # for year, rdd in happinessRDDs:
 #     result = countriesByHappinessInYear(rdd)
-#     print('YEAR %d | Happiest Country: %-12s | Score:%.3f' % (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
-
+#      print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
+#            (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
 
 
 # SECOND ANALYSIS: Happiest region for each year
@@ -134,43 +134,55 @@ def regionsByHappinessInYear(year):
         .map(lambda x: (x[1][0], findYearScore(x[1][1], year)))\
         .filter(lambda x: x[1] > 0)
 
-    aggregatedRegionHappiness = regionHappinessRDD\
+    aggregatedRegionHappinessRDD = regionHappinessRDD\
         .mapValues(lambda x: (x, 1)) \
         .reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1])) \
         .mapValues(lambda x: x[0] / x[1])
 
-    sortedRegionHappiness = aggregatedRegionHappiness\
+    sortedRegionHappinessRDD = aggregatedRegionHappinessRDD\
         .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
 
-    sortedRegionResults = sortedRegionHappiness.collect()
+    sortedRegionResults = sortedRegionHappinessRDD.collect()
     return sortedRegionResults
 
-for year in YEARS:
-    result = regionsByHappinessInYear(year)
-    print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
+# for year in YEARS:
+#     result = regionsByHappinessInYear(year)
+#     print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
+
 
 # THIRD ANALYSIS: Happiest country overall
-# countriesTotalHappinessRDD = readableResults.map(lambda x: (x[0], averageHappiness(x[1][1])))
-# sortedTotalHappinessRDD = countriesTotalHappinessRDD.map(lambda x: (x[1], x[0]))\
-#     .sortByKey().map(lambda x: (x[1], x[0]))
-# resultTotalHappiness = sortedTotalHappinessRDD.collect()
-# # print "Happiest country overall:", resultTotalHappiness[-1][0]
-# for r in resultTotalHappiness:
-#     print(r)
+def countriesByAverageHappiness():
+    countriesAverageHappinessRDD = combinedRDD.map(lambda x: (x[0], averageHappiness(x[1][1])))
+
+    sortedAverageHappinessRDD = countriesAverageHappinessRDD\
+        .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
+
+    resultAverageHappiness = sortedAverageHappinessRDD.collect()
+    return resultAverageHappiness
+
+
+# sortedCountriesByAverage = countriesByAverageHappiness()
+# print('Happiest country on average: %s | Average Score: %.3f' %
+#       (sortedCountriesByAverage[-1][0], sortedCountriesByAverage[-1][1]))
 
 # FOURTH ANALYSIS: Happiest region overall
-# regionsTotalRDD = readableResults.filter(lambda x: x[1][0] != "")
-# regionTotalHappinessRDD = regionsTotalRDD.map(lambda x: (x[1][0], averageHappiness(x[1][1])))
-# aggregatedTotalHappiness = regionTotalHappinessRDD.mapValues(lambda x:(x, 1))\
-#     .reduceByKey(lambda x, y: (x[0] + y[0], x[1]+y[1]))\
-#     .mapValues(lambda x: x[0]/x[1])
-# sortedRegionTotal = aggregatedTotalHappiness.map(lambda x: (x[1], x[0]))\
-#     .sortByKey().map(lambda x: (x[1], x[0]))
-# resultRegionTotal = sortedRegionTotal.collect()
-# print "Happiest Region:", resultRegionTotal[-1][0]
-# for r in resultRegionTotal:
-#     print(r)
+def regionByAverageHappiness():
+    regionAverageHappinessRDD = combinedRDD.map(lambda x: (x[1][0], averageHappiness(x[1][1])))
 
+    aggregatedRegionAverageHappinessRDD = regionAverageHappinessRDD\
+        .mapValues(lambda x:(x, 1))\
+        .reduceByKey(lambda x, y: (x[0] + y[0], x[1]+y[1]))\
+        .mapValues(lambda x: x[0]/x[1])
+
+    sortedRegionAveragesRDD = aggregatedRegionAverageHappinessRDD.map(lambda x: (x[1], x[0]))\
+        .sortByKey().map(lambda x: (x[1], x[0]))
+
+    resultRegionAverageHappiness = sortedRegionAveragesRDD.collect()
+    return resultRegionAverageHappiness
+
+
+# for region in regionByAverageHappiness():
+#     print('Region: %-32s | Average Score: %.3f' % (region[0], region[1]))
 
 # FIFTH ANALYSIS happiest country per region
 # print()
