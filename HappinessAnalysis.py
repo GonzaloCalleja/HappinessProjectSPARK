@@ -92,6 +92,77 @@ def averageHappiness(happinessPerYear):
         total += value[1]
     return total / len(happinessPerYear)
 
+# HERE START THE ANALYSIS
+
+# FIRST ANALYSIS: Happiest country for each year
+# for each year, place the score as the key, sort it, and then flip it again to return usable information
+def countriesByHappinessInYear(rdd):
+    flipped = rdd.map(flipScoreAndName)
+    sortedYear = flipped.sortByKey().map(flipScoreAndName)
+    sortedYearResult = sortedYear.collect()
+    return sortedYearResult
+
+
+# SECOND ANALYSIS: Happiest region for each year
+def regionsByHappinessInYear(year, combinedRDD):
+    regionHappinessRDD = combinedRDD\
+        .map(lambda x: (x[1][0], findYearScore(x[1][1], year)))\
+        .filter(lambda x: x[1] > 0)
+
+    aggregatedRegionHappinessRDD = regionHappinessRDD\
+        .mapValues(lambda x: (x, 1)) \
+        .reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1])) \
+        .mapValues(lambda x: x[0] / x[1])
+
+    sortedRegionHappinessRDD = aggregatedRegionHappinessRDD\
+        .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
+
+    sortedRegionResults = sortedRegionHappinessRDD.collect()
+    return sortedRegionResults
+
+
+# THIRD ANALYSIS: Happiest country overall
+def countriesByAverageHappiness(combinedRDD):
+    countriesAverageHappinessRDD = combinedRDD.map(lambda x: (x[0], averageHappiness(x[1][1])))
+
+    sortedAverageHappinessRDD = countriesAverageHappinessRDD\
+        .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
+
+    resultAverageHappiness = sortedAverageHappinessRDD.collect()
+    return resultAverageHappiness
+
+
+# FOURTH ANALYSIS: Happiest region overall
+def regionByAverageHappiness(combinedRDD):
+    regionAverageHappinessRDD = combinedRDD.map(lambda x: (x[1][0], averageHappiness(x[1][1])))
+
+    aggregatedRegionAverageHappinessRDD = regionAverageHappinessRDD\
+        .mapValues(lambda x:(x, 1))\
+        .reduceByKey(lambda x, y: (x[0] + y[0], x[1]+y[1]))\
+        .mapValues(lambda x: x[0]/x[1])
+
+    sortedRegionAveragesRDD = aggregatedRegionAverageHappinessRDD.map(lambda x: (x[1], x[0]))\
+        .sortByKey().map(lambda x: (x[1], x[0]))
+
+    resultRegionAverageHappiness = sortedRegionAveragesRDD.collect()
+    return resultRegionAverageHappiness
+
+# FIFTH ANALYSIS happiest country per region
+def happiestAverageCountryInRegion(combinedRDD):
+
+    avergageHappinessRegionAsKeyRDD = combinedRDD.map(lambda x: (x[1][0], (averageHappiness(x[1][1]), x[0])))
+    regionAndMaxAverageHappinessRDD = avergageHappinessRegionAsKeyRDD.reduceByKey(lambda x, y: max(x, y))
+    resultHappiestAverageCountryInRegion = regionAndMaxAverageHappinessRDD.collect()
+    return resultHappiestAverageCountryInRegion
+
+# SIXTH ANALYSIS happiest country per region per year
+
+def happiestCountryInRegionPerYear(year, combinedRDD):
+    countryHappinessWithRegionAsKeyRDD = combinedRDD.map(lambda x: (x[1][0], (findYearScore(x[1][1], year), x[0])))
+    regionMaxHappinessRDD = countryHappinessWithRegionAsKeyRDD.reduceByKey(lambda x, y: max(x, y))
+    resultHappiestInRegion = regionMaxHappinessRDD.collect()
+    return resultHappiestInRegion
+
 
 # Create Spark context and name the project
 conf = SparkConf().setMaster("local").setAppName("HappinessProjectSPARK")
@@ -112,94 +183,34 @@ combinedRDD = sc.union(allRDDs)\
     .reduceByKey(lambda x, y: (x[0], join(x[1], y[1])))\
     .filter(lambda x: x[1][0] != "")
 
-# HERE START THE ANALYSIS
+# PRINT FIRST ANALYSIS
+for year, rdd in happinessRDDs:
+    result = countriesByHappinessInYear(rdd)
+     print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
+           (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
 
-# FIRST ANALYSIS: Happiest country for each year
-# for each year, place the score as the key, sort it, and then flip it again to return usable information
-def countriesByHappinessInYear(rdd):
-    flipped = rdd.map(flipScoreAndName)
-    sortedYear = flipped.sortByKey().map(flipScoreAndName)
-    sortedYearResult = sortedYear.collect()
-    return sortedYearResult
+# PRINT SECOND ANALYSIS
+for year in YEARS:
+    result = regionsByHappinessInYear(year, combinedRDD)
+    print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
 
-# for year, rdd in happinessRDDs:
-#     result = countriesByHappinessInYear(rdd)
-#      print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
-#            (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
+# PRINT THIRD ANALYSIS
+sortedCountriesByAverage = countriesByAverageHappiness(combinedRDD)
+print('Happiest country on average: %s | Average Score: %.3f' %
+      (sortedCountriesByAverage[-1][0], sortedCountriesByAverage[-1][1]))
 
+# PRINT FOURTH ANALYSIS
+for region in regionByAverageHappiness(combinedRDD):
+    print('Region: %-32s | Average Score: %.3f' % (region[0], region[1]))
 
-# SECOND ANALYSIS: Happiest region for each year
-def regionsByHappinessInYear(year):
-    regionHappinessRDD = combinedRDD\
-        .map(lambda x: (x[1][0], findYearScore(x[1][1], year)))\
-        .filter(lambda x: x[1] > 0)
+# PRINT FIFTH ANALYSIS
+for region in happiestAverageCountryInRegion(combinedRDD):
+    print('Region: %-32s | Happiest Average Country: %-15s | Average Score: %.3f' %
+          (region[0], region[1][1], region[1][0]))
 
-    aggregatedRegionHappinessRDD = regionHappinessRDD\
-        .mapValues(lambda x: (x, 1)) \
-        .reduceByKey(lambda x, y: (x[0] + y[0], x[1] + y[1])) \
-        .mapValues(lambda x: x[0] / x[1])
-
-    sortedRegionHappinessRDD = aggregatedRegionHappinessRDD\
-        .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
-
-    sortedRegionResults = sortedRegionHappinessRDD.collect()
-    return sortedRegionResults
-
-# for year in YEARS:
-#     result = regionsByHappinessInYear(year)
-#     print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
-
-
-# THIRD ANALYSIS: Happiest country overall
-def countriesByAverageHappiness():
-    countriesAverageHappinessRDD = combinedRDD.map(lambda x: (x[0], averageHappiness(x[1][1])))
-
-    sortedAverageHappinessRDD = countriesAverageHappinessRDD\
-        .map(lambda x: (x[1], x[0])).sortByKey().map(lambda x: (x[1], x[0]))
-
-    resultAverageHappiness = sortedAverageHappinessRDD.collect()
-    return resultAverageHappiness
-
-
-# sortedCountriesByAverage = countriesByAverageHappiness()
-# print('Happiest country on average: %s | Average Score: %.3f' %
-#       (sortedCountriesByAverage[-1][0], sortedCountriesByAverage[-1][1]))
-
-# FOURTH ANALYSIS: Happiest region overall
-def regionByAverageHappiness():
-    regionAverageHappinessRDD = combinedRDD.map(lambda x: (x[1][0], averageHappiness(x[1][1])))
-
-    aggregatedRegionAverageHappinessRDD = regionAverageHappinessRDD\
-        .mapValues(lambda x:(x, 1))\
-        .reduceByKey(lambda x, y: (x[0] + y[0], x[1]+y[1]))\
-        .mapValues(lambda x: x[0]/x[1])
-
-    sortedRegionAveragesRDD = aggregatedRegionAverageHappinessRDD.map(lambda x: (x[1], x[0]))\
-        .sortByKey().map(lambda x: (x[1], x[0]))
-
-    resultRegionAverageHappiness = sortedRegionAveragesRDD.collect()
-    return resultRegionAverageHappiness
-
-
-# for region in regionByAverageHappiness():
-#     print('Region: %-32s | Average Score: %.3f' % (region[0], region[1]))
-
-# FIFTH ANALYSIS happiest country per region
-# print()
-# regionsTotalRDD = readableResults.filter(lambda x: x[1][0] != "")
-# regionAsKey = regionsTotalRDD.map(lambda x: (x[1][0], (averageHappiness(x[1][1]), x[0])))
-# regionMaxHappiness = regionAsKey.reduceByKey(lambda x, y: max(x, y))
-# resultHappiestinRegion = regionMaxHappiness.collect()
-# for r in resultHappiestinRegion:
-#     print(r)
-
-# SIXTH ANALYSIS happiest country per region per year
-# for year in YEARS:
-#     regionsYearTotalRDD = readableResults.filter(lambda x: x[1][0] != "")
-#     regionYearAsKey = regionsYearTotalRDD.map(lambda x: (x[1][0], (findYearScore(x[1][1], year), x[0])))
-#     regionMaxHappiness = regionYearAsKey.reduceByKey(lambda x, y: max(x, y))
-#     resultHappiestinRegion = regionMaxHappiness.collect()
-#     print
-#     print(year)
-#     for r in resultHappiestinRegion:
-#         print(r)
+# PRINT SIXTH ANALYSIS
+for year in YEARS:
+    print(year)
+    for region in happiestCountryInRegionPerYear(year, combinedRDD):
+        print('Region: %-32s | Happiest Average Country: %-15s | Average Score: %.3f' %
+              (region[0], region[1][1], region[1][0]))
