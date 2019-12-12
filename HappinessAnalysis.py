@@ -184,33 +184,40 @@ combinedRDD = sc.union(allRDDs)\
     .filter(lambda x: x[1][0] != "")
 
 # PRINT FIRST ANALYSIS
+print("FIRST ANALYSIS: Happiest Countries per Year")
 for year, rdd in happinessRDDs:
     result = countriesByHappinessInYear(rdd)
     print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
            (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
 
 # PRINT SECOND ANALYSIS
+print("SECOND ANALYSIS: Happiest Regions per Year")
 for year in YEARS:
     result = regionsByHappinessInYear(year, combinedRDD)
     print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
 
 # PRINT THIRD ANALYSIS
+print("THIRD ANALYSIS: Happiest Country on Average")
 sortedCountriesByAverage = countriesByAverageHappiness(combinedRDD)
 print('Happiest country on average: %s | Average Score: %.3f' %
       (sortedCountriesByAverage[-1][0], sortedCountriesByAverage[-1][1]))
 
 # PRINT FOURTH ANALYSIS
+print("FOURTH ANALYSIS: Sorted Average Region Happiness")
 for region in regionByAverageHappiness(combinedRDD):
     print('Region: %-32s | Average Score: %.3f' % (region[0], region[1]))
 
 # PRINT FIFTH ANALYSIS
+print("FIFTH ANALYSIS: Happiest Country per Region on Average")
 for region in happiestAverageCountryInRegion(combinedRDD):
     print('Region: %-32s | Happiest Average Country: %-15s | Average Score: %.3f' %
           (region[0], region[1][1], region[1][0]))
 
 # PRINT SIXTH ANALYSIS
+print("SIXTH ANALYSIS: Happiest Country in Region per Year")
 for year in YEARS:
     print(year)
     for region in happiestCountryInRegionPerYear(year, combinedRDD):
         print('Region: %-32s | Happiest Average Country: %-15s | Average Score: %.3f' %
               (region[0], region[1][1], region[1][0]))
+
