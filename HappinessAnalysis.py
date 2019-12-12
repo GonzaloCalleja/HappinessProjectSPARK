@@ -1,5 +1,6 @@
 from pyspark import SparkConf, SparkContext
 import re
+import matplotlib.pyplot as plt
 
 # IMPORTANT CONSTANTS
 DATA_POINTS = ["Country", "Region", "Score"]
@@ -163,7 +164,6 @@ def happiestCountryInRegionPerYear(year, combinedRDD):
     resultHappiestInRegion = regionMaxHappinessRDD.collect()
     return resultHappiestInRegion
 
-
 # Create Spark context and name the project
 conf = SparkConf().setMaster("local").setAppName("HappinessProjectSPARK")
 sc = SparkContext(conf=conf)
@@ -187,14 +187,19 @@ combinedRDD = sc.union(allRDDs)\
 print("FIRST ANALYSIS: Happiest Countries per Year")
 for year, rdd in happinessRDDs:
     result = countriesByHappinessInYear(rdd)
-    print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
+    print('YEAR %d | Happiest Country: %-18s | Score:%.3f' %
            (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
+    print('YEAR %d | Saddest Country: %-20s | Score:%.3f' %
+          (year, result[0][COUNTRY_NAME_POS], result[0][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
+    print
 
 # PRINT SECOND ANALYSIS
 print("SECOND ANALYSIS: Happiest Regions per Year")
 for year in YEARS:
     result = regionsByHappinessInYear(year, combinedRDD)
-    print('YEAR %d | Happiest Region: %-12s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
+    print('YEAR %d | Happiest Region: %-18s | Average Score:%.3f' % (year, result[-1][0], result[-1][1]))
+    print('YEAR %d | Saddest Region: %-20s | Average Score:%.3f' % (year, result[0][0], result[0][1]))
+    print
 
 # PRINT THIRD ANALYSIS
 print("THIRD ANALYSIS: Happiest Country on Average")
@@ -220,4 +225,3 @@ for year in YEARS:
     for region in happiestCountryInRegionPerYear(year, combinedRDD):
         print('Region: %-32s | Happiest Average Country: %-15s | Average Score: %.3f' %
               (region[0], region[1][1], region[1][0]))
-
