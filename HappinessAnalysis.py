@@ -11,7 +11,7 @@ REGION_NAME_POS = 1
 SCORE_NAME_POS = -1
 
 
-# Method to extract country name, region & happiness score
+# method extract country name, region & happiness score
 def parseLine(line, columns):
     indexes = list(columns)
     if re.search(UNWANTED_PATTERN, line):
@@ -41,7 +41,6 @@ def parseLine(line, columns):
 # Since not all files are structured the same way we have to organize them:
 # 2017 -> no Region & countries surrounded by ""
 # 2018 & 2019 -> Country or Region
-# Method to clean all files
 def cleanFile(lines):
     header = lines.first().split(',')
     columns = []
@@ -52,7 +51,6 @@ def cleanFile(lines):
                 columns.append(index)
 
     return lines.map(lambda row: parseLine(row, columns)).filter(lambda x: DATA_POINTS[0] not in x[0])
-
 
 # Method to flip without mattering whether it has a "Region" value or not
 def flipKeyValue(line):
@@ -71,14 +69,15 @@ happinessRDDs = []
 for year in YEARS:
     happinessRDDs.append((year, cleanFile(sc.textFile(FILE_DIRECTORY + str(year) + FILE_EXTENSION))))
 
+
 # FIRST ANALYSIS: Happiest country for each year
 for year, rdd in happinessRDDs:
-    print(year)
+
+    alphabetically = rdd.sortByKey()
     flipped = rdd.map(flipKeyValue)
     sortedRDD = flipped.sortByKey().map(flipKeyValue)
-    print(sortedRDD.collect())
     sortedCountries = sortedRDD.collect()
-    print "YEAR", year, "- Happiest Country:", sortedCountries[-1][COUNTRY_NAME_POS], "Score:", sortedCountries[-1][SCORE_NAME_POS][-1]
+    print "YEAR", year, "| Happiest Country:", sortedCountries[-1][COUNTRY_NAME_POS], "Score|", sortedCountries[-1][SCORE_NAME_POS][-1]
 
 # SECOND ANALYSIS: Happiest region for each year
 
@@ -92,12 +91,7 @@ c = a.reduceByKey(lambda x, y: (x[0], (x[1], y[1]))).sortByKey()
 
 
 
-
-# THIRD ANALYSIS: Happiest country per region for each year
-# Combining rdds into large rdd for combined analysis:
-
-
-
+#
 
 # # happiest year of a country:
 # happiest = flipped.reduceByKey(lambda x, y: max(x,y))
