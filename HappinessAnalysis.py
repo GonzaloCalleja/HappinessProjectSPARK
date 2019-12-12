@@ -186,7 +186,7 @@ combinedRDD = sc.union(allRDDs)\
 # PRINT FIRST ANALYSIS
 for year, rdd in happinessRDDs:
     result = countriesByHappinessInYear(rdd)
-     print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
+    print('YEAR %d | Happiest Country: %-12s | Score:%.3f' %
            (year, result[-1][COUNTRY_NAME_POS], result[-1][1][SCORE_NUM_POS][0][SCORE_NUM_POS]))
 
 # PRINT SECOND ANALYSIS
